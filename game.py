@@ -57,14 +57,14 @@ class Player(pg.sprite.Sprite): # создание игрока
       self.speed_y = -1
     if key[pg.K_DOWN]:
       self.speed_y = 1
-    if self.plr_turn == False:
+    if self.plr_turn == True:
       self.speed_x = -1
     else:
       self.speed_x = 1
     if self.rect.x >= 1160:
-      self.plr_turn = False
-    elif self.rect.x <= 40:
       self.plr_turn = True
+    elif self.rect.x <= 40:
+      self.plr_turn = False
     if self.rect.y >= 740: #потом убрать
       self.speed_y = -1
     elif self.rect.y <= 40:
