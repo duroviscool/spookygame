@@ -1,14 +1,14 @@
+import pygame
 import pygame as pg
 import random
-import math
 
 pg.init()
 
 font_name = pg.font.match_font('Arial') #поиск шрифта
 size = 18 #его размер
 
-w = 1200
-h = 800
+w,h = 1200,800 #размер окна
+
 win = pg.display.set_mode((w,h))
 
 bg = pg.image.load("replace.png") #загрузка (добавление) картинки
@@ -19,12 +19,17 @@ pg.display.set_caption("потом название придумаю") # наз�
 stbg = pg.image.load('darkbg.jpg') # фон игры, потом нарисую
 stbg = pg.transform.scale(stbg, (w,h))
 
+#jump_sfx = pg.mixer.Sound()
+#dmg_sfx = pg.mixer.Sound()
+
 x = w//2
 y = h//2
 
 score = 0 # очки
 max_health = 5 # макс. здоровье
 health = 5 # текущее здоровье
+immunity = False # временная неуязвимость после получения урона
+immunity_time = 0
 
 class Player(pg.sprite.Sprite): # создание игрока
   def __init__(self, plr_x, plr_y):
@@ -36,12 +41,9 @@ class Player(pg.sprite.Sprite): # создание игрока
     self.jumping = False
     self.falling = False
     # скорость бега/прыжка
-    self.speed_x = 1
-    self.speed_y = 0
+    self.speed_x = 2
     # счет кардов для прыжка, падения
-    self.jump_count = 0
-    self.jump_max = 90
-    self.jump_fall_count = 15
+    self.floor = 0
 
     # картинка игрока
     self.image = pg.image.load("player.png")
@@ -61,110 +63,99 @@ class Player(pg.sprite.Sprite): # создание игрока
     self.image_orig = pg.transform.scale(self.image_orig, (64, 64))
     self.image_orig = pg.transform.flip(self.image, False, False)
   def jump(self):
-
-    # прыжок
-    self.jumping = True
-    for i in range(1,180):
-      self.jumping = True
-    self.jumping = False
-
-
-
+    if self.floor < 3:
+      self.rect.y -= 180
+      self.floor += 1
+  def fall(self):
+    if self.floor > 0:
+      self.rect.y += 180
+      self.floor -= 1
   def update(self):
     self.rect.x += self.speed_x
-    self.rect.y += self.speed_y
-
-    if self.jumping == True:
-      self.speed_y = 2
-    else:
-      self.speed_y = 0
-
-
     # проверка поворота
     if self.plr_turn:
-      self.speed_x = -1
+      self.speed_x = -2
       self.image = self.image_flip
     else:
-      self.speed_x = 1
+      self.speed_x = 2
       self.image = self.image_orig
-
     # поворот
     if self.rect.x >= (1080-64):
       self.plr_turn = True
     elif self.rect.x <= 120:
       self.plr_turn = False
 
-class Sphere(pg.sprite.Sprite): # создание сферы
-  def __init__(self, plr_pos_x, plr_pos_y):
-    pg.sprite.Sprite.__init__(self)
-    self.x = x
-    self.y = y
-    self.plr_pos_x = plr_pos_x
-    self.plr_pos_y = plr_pos_y
-    self.r = 5
-    self.rad = 10
-    self.speed = 3
-    for i in range(1,3):
-      self.image = pg.image.load("light_sphere.png")
-      self.image = pg.transform.scale(self.image, (32,32))
-      self.rect = self.image.get_rect()
-      self.rect.centerx = self.x
-      self.rect.bottom = self.y
-
-  def update_pos(self):
-    if self.r <= 360:  # здесь мы ставим ограничения, что-бы питон не выдал нам ошибку.
-      self.angle = self.r * (3.14 / 180)  # перевод из градусов в радианы
-      self.x = self.rad * math.cos(self.angle) + self.plr_pos_x
-      self.y = self.rad * math.sin(self.angle) + self.plr_pos_y
-      self.r += self.speed
-    else:
-      self.r = 0
-
 class Enemy(pg.sprite.Sprite): # создание врага
   def __init__(self):
     pg.sprite.Sprite.__init__(self)
     self.image = pg.image.load("ghost.png")
     self.image = pg.transform.scale(self.image, (64,64))
-    self.speed_x = 1
-    self.speed_y = 1
-    self.plr_turn = False
+
     self.rect = self.image.get_rect()
-    self.rect.x = random.randrange(60,1140) # ИЗНАЧАЛЬНАЯ позиция
-    self.rect.y = random.randrange(60,740)
+    self.rect.x = w//2  # ИЗНАЧАЛЬНАЯ позиция
+    self.rect.y = h//2
+
+    # данные об отраженной картинки игрока
+    self.image_flip = pg.image.load("ghost.png")
+    self.image_flip = pg.transform.scale(self.image_flip, (64, 64))
+    self.image_flip = pg.transform.flip(self.image, True, False)
+
+    # данные об неотраженной картинки игрока
+    self.image_orig = pg.image.load("ghost.png")
+    self.image_orig = pg.transform.scale(self.image_orig, (64, 64))
+    self.image_orig = pg.transform.flip(self.image, False, False)
+    self.speed_x = 4
+    self.speed_y = 4
+    self.plr_turn = False
+
+  def create(self):
+    self.speed_y = random.randrange(1,4)
+    win.blit(self.image, (self.rect.x, self.rect.y))
+
   def update(self):
     self.rect.x += self.speed_x
     self.rect.y += self.speed_y
-    if self.plr_turn == True:
-      self.speed_x = -1
+    if self.plr_turn:
+      self.speed_x = -4
+      self.image = self.image_orig
     else:
-      self.speed_x = 1
+      self.speed_x = 4
+      self.image = self.image_flip
+
     if self.rect.x >= 1160:
       self.plr_turn = True
     elif self.rect.x <= 40:
       self.plr_turn = False
-    if self.rect.y >= 740: #потом убрать
-      self.speed_y = -1
-    elif self.rect.y <= 40:
-      self.speed_y = 1 #
 
-class Walls(): # создание стен, пола, потолка (наверное потом будут картинки)
+    if self.rect.x >= (1080-64):
+      self.plr_turn = True
+    elif self.rect.x <= 120:
+      self.plr_turn = False
+
+    if self.rect.y >= (720-64):
+      self.speed_y = -4
+    elif self.rect.y <= 80:
+      self.speed_y = 4
+
+class Walls(): # создание границ стен, пола, потолка, платформ
   def __init__(self):
     self.floor_rect = pg.draw.rect(win, (0, 0, 0), (0, 720, 1200, 800))
     self.wall_rect1 = pg.draw.rect(win, (0, 0, 0), (0, 0, 120, 800))
     self.wall_rect2 = pg.draw.rect(win, (0, 0, 0), (1080, 0, 1200, 800))
     self.ceil_rect = pg.draw.rect(win, (0, 0, 0), (0, 0, 1200, 80))
 
+    self.plat1 = pg.draw.rect(win, (0, 0, 0), (120, 540, 960, 20))
+    self.plat2 = pg.draw.rect(win, (0, 0, 0), (120, 360, 960, 20))
+    self.plat2 = pg.draw.rect(win, (0, 0, 0), (120, 180, 960, 20))
+
 player = Player(w//2,720)
 all_sprites = pg.sprite.Group()
 all_sprites.add(player)
 
+enemy_list = []
 enemy = Enemy()
 enemy_sprites = pg.sprite.Group()
 enemy_sprites.add(enemy)
-
-sphere = Sphere(plr_pos_x=player.plr_x, plr_pos_y=player.plr_y)
-sphere_sprites = pg.sprite.Group()
-sphere_sprites.add(sphere)
 
 name = ''
 
@@ -184,6 +175,7 @@ def user_name(surf,text,x,y,size):
 
 fps = pg.time.Clock()
 main = True
+
 #вступительный экран
 while main:
   for event in pg.event.get():
@@ -205,54 +197,60 @@ while main:
   fps.tick(60)
 
 #сама игра
-while health >= 1:
-  for i in pg.event.get():
-    if i.type == pg.QUIT:
-      exit()
-  fps.tick(60)
-  # fps.tick(300) #побаловаться или для более быстрых тестов
-
-
-  win.blit(stbg, (0,0))
-
-  draw_text(win,name,15,15, color=(0,0,0))
-  draw_text(win, f'Score:{score}', w//2,15,color=(255,255,255)) # кол-во очков
-
-  Walls()  # создание стен
-  all_sprites.update() # обновление спрайтов
-  enemy_sprites.update()
-  sphere_sprites.update()
-
-  all_sprites.draw(win) # создание спрайтов
-  enemy_sprites.draw(win)
-  sphere_sprites.draw(win)
-
-  sphere.update_pos()
-  player.update()
-
-  key = pg.key.get_pressed()
-  if key[pg.K_UP]:
-    player.jump()
-    print("jump")
-  # прыжок
-
-  destroy_collision = pg.sprite.spritecollide(sphere, enemy_sprites, False, pg.sprite.collide_mask) # проверка на прикосновение врага и сферы
-  if destroy_collision:
-    score += 1
-    enemy.new_pos() # тут враг меняет позицию при его уничтожении, но нужно, чтобы просто исчезал
-
-  damage_collision = pg.sprite.spritecollide(player, enemy_sprites, False, pg.sprite.collide_mask) # проверка на прикосновение врага и игрока
-  if damage_collision:
-    health -= 1 # отнимает здоровье
-    print(health)
-
-  pg.display.update()
-
-while True:
+while health >= 1: #игра работает, пока здоровье больше 0
   for event in pg.event.get():
     if event.type == pg.QUIT:
       exit()
+    elif event.type == pg.KEYDOWN: # передвижение
+      if event.key == pg.K_UP:
+        player.jump()
+      if event.key == pg.K_DOWN:
+        player.fall()
+  win.blit(stbg, (0,0))
+
+  draw_text(win,name,15,15, color=(255,255,255))
+  draw_text(win, f'Score:{score}', w//2,15,color=(255,255,255)) # кол-во очков
+
+  enemy_spawntime = pygame.time.get_ticks()
+
+  Walls()  # создание стен
+  all_sprites.update() # обновление спрайта
+  all_sprites.draw(win)  # создание спрайта
+  enemy_list.append(enemy)
+  for enemy in enemy_list:
+    enemy_sprites.draw(win)
+    enemy_sprites.update()
+    spawn_cooldown = pygame.time.get_ticks()
+
+  player.update()
+
+  damage_collision = pg.sprite.spritecollide(player, enemy_sprites, False, pg.sprite.collide_mask) # проверка на прикосновение врага и игрока
+
+  if damage_collision and not immunity:
+    health -= 1 # отнимает здоровье
+    print(health)
+    immunity = True
+    immunity_time = pg.time.get_ticks()
+
+  if pygame.time.get_ticks() - immunity_time > 1000:
+    immunity = False
+
+  pg.display.update()
+  fps.tick(60) # частота смены кадров
+  #fps.tick(300) # побаловаться или для более быстрых тестов
+
+# конечный экран
+active = True
+while active:
+  for event in pg.event.get():
+    if event.type == pg.QUIT:
+      exit()
+    elif event.type == pg.KEYDOWN:
+      if event.key == pg.K_ESCAPE:
+        active = False
 
   win.fill((0,0,0))
+  draw_text(win, 'ТЫ СДОХ АХПХПХАПХАПХ', (w // 2), (h // 2))
   pg.display.update()
-  fps.tick(5)
+  fps.tick(60)
+pg.quit()
