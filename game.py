@@ -1,5 +1,7 @@
 import pygame
 import pygame as pg
+from sql_bd import DataBaseSQL
+SQL = DataBaseSQL
 
 pg.init()
 pg.mixer.init()
@@ -22,11 +24,13 @@ stbg = pg.transform.scale(stbg, (w,h))
 x,y = w//2,h//2
 
 score = 0 # очки
-max_health = 3 # макс. здоровье
-health = 3 # текущее здоровье
+health = 3 # здоровье
 immunity = False # временная неуязвимость после получения урона
 immunity_time = 0 # пробка чтобы ошибки не было
 speed_cooldown_time = 0
+
+hit_sound = pygame.mixer.Sound("hit.wav")
+hit_sound.set_volume(0.05)
 
 class Player(pg.sprite.Sprite): # создание игрока
   def __init__(self, plr_x, plr_y):
@@ -161,7 +165,7 @@ def user_name(surf,text,x,y,size):
   font = pg.font.Font(font_name, size) #определение шрифта
   text_surface = font.render(text, True, color=(255,255,255))
   text_rect = text_surface.get_rect()
-  text_rect.midtop = (x, y)
+  text_rect.midtop = (x,y)
   surf.blit(text_surface, text_rect)
 
 fps = pg.time.Clock()
@@ -189,7 +193,7 @@ while main:
   fps.tick(60)
 
 pygame.mixer.music.load("lymatt.mp3")  # загрузка музыки
-pygame.mixer.music.set_volume(0.03) # громкость
+pygame.mixer.music.set_volume(0.02) # громкость
 pygame.mixer.music.play(-1, 0.0) # проигрывание
 
 #сама игра
@@ -202,6 +206,8 @@ while health >= 1: #игра работает, пока здоровье бол�
         player.jump()
       if event.key == pg.K_DOWN:
         player.fall()
+      if event.key == pg.K_m:
+        pygame.mixer.music.set_volume(0)
   win.blit(stbg, (0,0))
   enemy_spawntime = pygame.time.get_ticks()
   enemy_sprites.draw(win)
@@ -213,7 +219,7 @@ while health >= 1: #игра работает, пока здоровье бол�
   player.update()
 
   draw_text(win,name,15,15, color=(255,255,255))
-  draw_text(win, f'Score:{int(score)}', w // 2, 15, color=(255, 0, 255))  # кол-во очков
+  draw_text(win, f'Score:{int(score)}', w // 2, 15, color=(255, 255, 255))  # кол-во очков
   pg.draw.rect(win, (110,0,0), (0, 0, (health*400), 10))
 
   damage_collision = pg.sprite.spritecollide(player, enemy_sprites, False, pg.sprite.collide_mask) # проверка на прикосновение врага и игрока
@@ -221,6 +227,7 @@ while health >= 1: #игра работает, пока здоровье бол�
   if damage_collision and not immunity:
     health -= 1 # отнимает здоровье
     print("HP: ",health)
+    hit_sound.play()
     immunity = True
     immunity_time = pg.time.get_ticks()
 
@@ -238,18 +245,26 @@ while health >= 1: #игра работает, пока здоровье бол�
 
 pygame.mixer.music.stop()
 # конечный экран
+#SQL.set(name=name,score=score)
 active = True
 while active:
   for event in pg.event.get():
     if event.type == pg.QUIT:
       exit()
     elif event.type == pg.KEYDOWN:
-      if event.key == pg.K_ESCAPE:
+      if event.key == pg.K_ESCAPE: # выход при нажатии esc
         active = False
 
   win.fill((0,0,0))
-  draw_text(win, 'Поздравляю...', (w // 2), (h // 2))
-  draw_text(win, f'Результат: {int(score)}', (w // 2), ((h // 2)+20))
-  pg.display.update()
-  fps.tick(60)
+  #offset = 20
+  #step = 0
+  #for u_name, u_score in SQL.get(): # вывод всех рекордов
+    #step += 1
+    #draw_text(win, (f'{u_name}: {u_score}'), w // 2 - 10, h - 180 - offset * 2)
+    #offset -= 20
+  #step = 0
+  draw_text(win, 'Поздравляю...', w // 2, (h//2-50))
+  draw_text(win, f'Результат: {int(score)}', w // 2, h // 2)
+  #draw_text(win, 'Таблица лидеров:', w // 2, (h//2+50))
+  pg.display.flip()
 pg.quit()
