@@ -1,7 +1,7 @@
 import pygame
 import pygame as pg
 from sql_bd import DataBaseSQL
-SQL = DataBaseSQL
+SQL = DataBaseSQL()
 
 pg.init()
 pg.mixer.init()
@@ -245,7 +245,7 @@ while health >= 1: #игра работает, пока здоровье бол�
 
 pygame.mixer.music.stop()
 # конечный экран
-#SQL.set(name=name,score=score)
+SQL.set(name=name,score=score)
 active = True
 while active:
   for event in pg.event.get():
@@ -256,15 +256,15 @@ while active:
         active = False
 
   win.fill((0,0,0))
-  #offset = 20
-  #step = 0
-  #for u_name, u_score in SQL.get(): # вывод всех рекордов
-    #step += 1
-    #draw_text(win, (f'{u_name}: {u_score}'), w // 2 - 10, h - 180 - offset * 2)
-    #offset -= 20
-  #step = 0
+  offset = 20
+  step = 0
+  for u_name, u_score in SQL.get(): # вывод всех рекордов
+    step += 1
+    draw_text(win, (f'{u_name}: {u_score}'), w // 2 - 10, h - 180 - offset * 2)
+    offset -= 20
+  step = 0
   draw_text(win, 'Поздравляю...', w // 2, (h//2-50))
   draw_text(win, f'Результат: {int(score)}', w // 2, h // 2)
-  #draw_text(win, 'Таблица лидеров:', w // 2, (h//2+50))
+  draw_text(win, 'Таблица лидеров:', w // 2, (h//2+50))
   pg.display.flip()
 pg.quit()
