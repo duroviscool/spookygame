@@ -1,8 +1,8 @@
 import pygame
 import pygame as pg
-import random
 
 pg.init()
+pg.mixer.init()
 
 font_name = pg.font.match_font('Arial') #поиск шрифта
 size = 18 #его размер
@@ -14,22 +14,19 @@ win = pg.display.set_mode((w,h))
 bg = pg.image.load("replace.png") #загрузка (добавление) картинки
 bg = pg.transform.scale(bg, (w,h)) #изменение картинки на полный экран
 
-pg.display.set_caption("потом название придумаю") # название программы (игры)
+pg.display.set_caption("Spooky Game") # название программы (игры)
 
 stbg = pg.image.load('darkbg.jpg') # фон игры, потом нарисую
 stbg = pg.transform.scale(stbg, (w,h))
 
-#jump_sfx = pg.mixer.Sound()
-#dmg_sfx = pg.mixer.Sound()
-
-x = w//2
-y = h//2
+x,y = w//2,h//2
 
 score = 0 # очки
-max_health = 5 # макс. здоровье
-health = 5 # текущее здоровье
+max_health = 3 # макс. здоровье
+health = 3 # текущее здоровье
 immunity = False # временная неуязвимость после получения урона
-immunity_time = 0
+immunity_time = 0 # пробка чтобы ошибки не было
+speed_cooldown_time = 0
 
 class Player(pg.sprite.Sprite): # создание игрока
   def __init__(self, plr_x, plr_y):
@@ -86,40 +83,35 @@ class Player(pg.sprite.Sprite): # создание игрока
       self.plr_turn = False
 
 class Enemy(pg.sprite.Sprite): # создание врага
-  def __init__(self):
+  def __init__(self, speed_x, speed_y, speed_bonus):
     pg.sprite.Sprite.__init__(self)
     self.image = pg.image.load("ghost.png")
     self.image = pg.transform.scale(self.image, (64,64))
 
     self.rect = self.image.get_rect()
-    self.rect.x = w//2  # ИЗНАЧАЛЬНАЯ позиция
+    self.rect.x = w//2
     self.rect.y = h//2
 
-    # данные об отраженной картинки игрока
     self.image_flip = pg.image.load("ghost.png")
     self.image_flip = pg.transform.scale(self.image_flip, (64, 64))
     self.image_flip = pg.transform.flip(self.image, True, False)
 
-    # данные об неотраженной картинки игрока
     self.image_orig = pg.image.load("ghost.png")
     self.image_orig = pg.transform.scale(self.image_orig, (64, 64))
     self.image_orig = pg.transform.flip(self.image, False, False)
-    self.speed_x = 4
-    self.speed_y = 4
+    self.speed_x = speed_x
+    self.speed_y = speed_y
+    self.speed_bonus = speed_bonus
     self.plr_turn = False
-
-  def create(self):
-    self.speed_y = random.randrange(1,4)
-    win.blit(self.image, (self.rect.x, self.rect.y))
 
   def update(self):
     self.rect.x += self.speed_x
     self.rect.y += self.speed_y
     if self.plr_turn:
-      self.speed_x = -4
+      self.speed_x = (-8-self.speed_bonus)
       self.image = self.image_orig
     else:
-      self.speed_x = 4
+      self.speed_x = (8+self.speed_bonus)
       self.image = self.image_flip
 
     if self.rect.x >= 1160:
@@ -133,9 +125,9 @@ class Enemy(pg.sprite.Sprite): # создание врага
       self.plr_turn = False
 
     if self.rect.y >= (720-64):
-      self.speed_y = -4
+      self.speed_y = (-8-(self.speed_bonus*1.5))
     elif self.rect.y <= 80:
-      self.speed_y = 4
+      self.speed_y = (8+(self.speed_bonus*1.5))
 
 class Walls(): # создание границ стен, пола, потолка, платформ
   def __init__(self):
@@ -152,8 +144,7 @@ player = Player(w//2,720)
 all_sprites = pg.sprite.Group()
 all_sprites.add(player)
 
-enemy_list = []
-enemy = Enemy()
+enemy = Enemy(8,8,0)
 enemy_sprites = pg.sprite.Group()
 enemy_sprites.add(enemy)
 
@@ -174,6 +165,7 @@ def user_name(surf,text,x,y,size):
   surf.blit(text_surface, text_rect)
 
 fps = pg.time.Clock()
+fps_number = 60
 main = True
 
 #вступительный экран
@@ -196,6 +188,10 @@ while main:
   pg.display.update()
   fps.tick(60)
 
+pygame.mixer.music.load("lymatt.mp3")  # загрузка музыки
+pygame.mixer.music.set_volume(0.03) # громкость
+pygame.mixer.music.play(-1, 0.0) # проигрывание
+
 #сама игра
 while health >= 1: #игра работает, пока здоровье больше 0
   for event in pg.event.get():
@@ -207,38 +203,40 @@ while health >= 1: #игра работает, пока здоровье бол�
       if event.key == pg.K_DOWN:
         player.fall()
   win.blit(stbg, (0,0))
-
-  draw_text(win,name,15,15, color=(255,255,255))
-  draw_text(win, f'Score:{score}', w//2,15,color=(255,255,255)) # кол-во очков
-
   enemy_spawntime = pygame.time.get_ticks()
-
+  enemy_sprites.draw(win)
+  enemy_sprites.update()
   Walls()  # создание стен
-  all_sprites.update() # обновление спрайта
   all_sprites.draw(win)  # создание спрайта
-  enemy_list.append(enemy)
-  for enemy in enemy_list:
-    enemy_sprites.draw(win)
-    enemy_sprites.update()
-    spawn_cooldown = pygame.time.get_ticks()
+  all_sprites.update() # обновление спрайта
 
   player.update()
+
+  draw_text(win,name,15,15, color=(255,255,255))
+  draw_text(win, f'Score:{int(score)}', w // 2, 15, color=(255, 0, 255))  # кол-во очков
+  pg.draw.rect(win, (110,0,0), (0, 0, (health*400), 10))
 
   damage_collision = pg.sprite.spritecollide(player, enemy_sprites, False, pg.sprite.collide_mask) # проверка на прикосновение врага и игрока
 
   if damage_collision and not immunity:
     health -= 1 # отнимает здоровье
-    print(health)
+    print("HP: ",health)
     immunity = True
     immunity_time = pg.time.get_ticks()
 
-  if pygame.time.get_ticks() - immunity_time > 1000:
+  # секундные события
+  if pygame.time.get_ticks() - immunity_time > 1000: # неязвимость
     immunity = False
+  if pygame.time.get_ticks() - speed_cooldown_time > 1000: #ускорение игры
+    fps_number += 0.02
+    score += 0.016
+    Enemy(8,8, speed_bonus=((fps_number-60)*2))
 
   pg.display.update()
-  fps.tick(60) # частота смены кадров
+  fps.tick(fps_number) # частота смены кадров
   #fps.tick(300) # побаловаться или для более быстрых тестов
 
+pygame.mixer.music.stop()
 # конечный экран
 active = True
 while active:
@@ -250,7 +248,8 @@ while active:
         active = False
 
   win.fill((0,0,0))
-  draw_text(win, 'ТЫ СДОХ АХПХПХАПХАПХ', (w // 2), (h // 2))
+  draw_text(win, 'Поздравляю...', (w // 2), (h // 2))
+  draw_text(win, f'Результат: {int(score)}', (w // 2), ((h // 2)+20))
   pg.display.update()
   fps.tick(60)
 pg.quit()
