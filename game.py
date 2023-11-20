@@ -193,8 +193,9 @@ while main:
   fps.tick(60)
 
 pygame.mixer.music.load("lymatt.mp3")  # загрузка музыки
-pygame.mixer.music.set_volume(0.02) # громкость
+pygame.mixer.music.set_volume(0.03) # громкость
 pygame.mixer.music.play(-1, 0.0) # проигрывание
+music_enabled = True #вкл/выкл музыку
 
 #сама игра
 while health >= 1: #игра работает, пока здоровье больше 0
@@ -207,7 +208,12 @@ while health >= 1: #игра работает, пока здоровье бол�
       if event.key == pg.K_DOWN:
         player.fall()
       if event.key == pg.K_m:
-        pygame.mixer.music.set_volume(0)
+        if music_enabled:
+          pygame.mixer.music.set_volume(0)
+          music_enabled = False
+        else:
+          pygame.mixer.music.set_volume(0.03)
+          music_enabled = True
   win.blit(stbg, (0,0))
   enemy_spawntime = pygame.time.get_ticks()
   enemy_sprites.draw(win)
