@@ -30,7 +30,7 @@ immunity_time = 0 # пробка чтобы ошибки не было
 speed_cooldown_time = 0
 
 hit_sound = pygame.mixer.Sound("hit.wav")
-hit_sound.set_volume(0.05)
+hit_sound.set_volume(0.3)
 
 class Player(pg.sprite.Sprite): # создание игрока
   def __init__(self, plr_x, plr_y):
@@ -193,7 +193,7 @@ while main:
   fps.tick(60)
 
 pygame.mixer.music.load("lymatt.mp3")  # загрузка музыки
-pygame.mixer.music.set_volume(0.3) # громкость
+pygame.mixer.music.set_volume(0.5) # громкость
 pygame.mixer.music.play(-1, 0.0) # проигрывание
 music_enabled = True #вкл/выкл музыку
 
@@ -212,7 +212,7 @@ while health >= 1: #игра работает, пока здоровье бол�
           pygame.mixer.music.set_volume(0)
           music_enabled = False
         else:
-          pygame.mixer.music.set_volume(0.3)
+          pygame.mixer.music.set_volume(0.5)
           music_enabled = True
   win.blit(stbg, (0,0))
   enemy_spawntime = pygame.time.get_ticks()
