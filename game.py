@@ -24,7 +24,7 @@ stbg = pg.transform.scale(stbg, (w,h))
 x,y = w//2,h//2
 
 score = 0 # очки
-health = 3 # здоровье
+health = 5 # здоровье
 immunity = False # временная неуязвимость после получения урона
 immunity_time = 0 # пробка чтобы ошибки не было
 speed_cooldown_time = 0
@@ -193,7 +193,7 @@ while main:
   fps.tick(60)
 
 pygame.mixer.music.load("lymatt.mp3")  # загрузка музыки
-pygame.mixer.music.set_volume(0.03) # громкость
+pygame.mixer.music.set_volume(0.3) # громкость
 pygame.mixer.music.play(-1, 0.0) # проигрывание
 music_enabled = True #вкл/выкл музыку
 
@@ -212,7 +212,7 @@ while health >= 1: #игра работает, пока здоровье бол�
           pygame.mixer.music.set_volume(0)
           music_enabled = False
         else:
-          pygame.mixer.music.set_volume(0.03)
+          pygame.mixer.music.set_volume(0.3)
           music_enabled = True
   win.blit(stbg, (0,0))
   enemy_spawntime = pygame.time.get_ticks()
@@ -247,11 +247,10 @@ while health >= 1: #игра работает, пока здоровье бол�
 
   pg.display.update()
   fps.tick(fps_number) # частота смены кадров
-  #fps.tick(300) # побаловаться или для более быстрых тестов
 
 pygame.mixer.music.stop()
 # конечный экран
-SQL.set(name=name,score=score)
+SQL.set(name=name,score=int(score))
 active = True
 while active:
   for event in pg.event.get():
