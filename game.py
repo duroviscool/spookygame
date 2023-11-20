@@ -186,7 +186,6 @@ while main:
         name += event.unicode
   win.fill((0,0,0))
   win.blit(bg, (0, 0)) #добавление фона в игру
-
   draw_text(win, 'Введите имя:', (w//2),(h//2))
   draw_text(win, name, w//2,((h//2) + 25))
   pg.display.update()
@@ -214,6 +213,7 @@ while health >= 1: #игра работает, пока здоровье бол�
         else:
           pygame.mixer.music.set_volume(0.5)
           music_enabled = True
+  break
   win.blit(stbg, (0,0))
   enemy_spawntime = pygame.time.get_ticks()
   enemy_sprites.draw(win)
@@ -265,7 +265,7 @@ while active:
   step = 0
   for u_name, u_score in SQL.get(): # вывод всех рекордов
     step += 1
-    draw_text(win, (f'{u_name}: {u_score}'), w // 2 - 10, h - 180 - offset * 2)
+    draw_text(win, (f'{u_name}: {u_score}'), w // 2 - 10, (h//2+150) - offset * 2)
     offset -= 20
   step = 0
   draw_text(win, 'Поздравляю...', w // 2, (h//2-50))
